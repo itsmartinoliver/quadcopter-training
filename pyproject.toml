@@ -1,0 +1,19 @@
+[project]
+name = "quadcopter-training"
+version = "0.1"
+dependencies = [
+    "numpy",
+    "gymnasium==0.29.1",
+    "torch",
+    "tyro",
+    "wandb",
+    "tensorboard",
+    "moviepy"
+]
+
+# Source - https://stackoverflow.com/a/72547402
+# Posted by Warm_Duscher, modified by community. See post 'Timeline' for change history
+# Retrieved 2026-07-31, License - CC BY-SA 4.0
+
+[tool.setuptools]
+py-modules = []
