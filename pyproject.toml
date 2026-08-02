@@ -8,7 +8,8 @@ dependencies = [
     "tyro",
     "wandb",
     "tensorboard",
-    "moviepy"
+    "moviepy",
+    "opencv-python"
 ]
 
 # Source - https://stackoverflow.com/a/72547402
