@@ -3,10 +3,8 @@
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
-import logging
-import time
 from quadcopters import Quadcopter
-import render_utils
+import rendering
 
 class MyCustomEnv(gym.Env):
     metadata = {"render_modes": ["rgb_array"], "render_fps": 100}
@@ -18,8 +16,6 @@ class MyCustomEnv(gym.Env):
         self.canvas_height = 800
         self.canvas_width = 800
         self.pixels_per_meter = 800  # Adjust based on your coordinate system
-        self.quad_image = None  # Will be loaded on first render
-        self.bg_image = None
 
         self.action_space = spaces.Box(
             low=0.0,
@@ -82,18 +78,11 @@ class MyCustomEnv(gym.Env):
         # Create a blank canvas
         canvas = np.zeros((self.canvas_height, self.canvas_width, 3), dtype=np.uint8)
         
-        if self.quad_image is None: # Load the quadcopter image (assumes it's stored as self.quad_image)
-            self.quad_image = render_utils._load_image('quadcopter.png', (60, 60))
-        if self.bg_image is None: # Load the background image (assumes it's stored as self.bg_image)
-            self.bg_image = render_utils._load_image('bg.png', (800, 800))
-        
         # Get position and rotation from quad state
         position = self.quad.state[:2]  # (x, y)
         rotation = self.quad.state[2]   # angle in radians
-        
-        # Draw the background and quadcopter image
-        canvas = render_utils._draw_rotated_image(canvas, self.bg_image)
-        canvas = render_utils._draw_rotated_image(canvas, self.quad_image, position, rotation, self.pixels_per_meter)
+
+        canvas = rendering.render()
         
         return canvas
 
