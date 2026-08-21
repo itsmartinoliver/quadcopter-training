@@ -3,38 +3,48 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import numpy as np
 
-def render(): # TODO: render quadcopter motion
-    plt.style.use('_mpl-gallery')
+class QuadcopterRenderer():
 
-    # Make data
-    n = 100
-    xs = np.linspace(0, 1, n)
-    ys = np.sin(xs * 6 * np.pi)
-    zs = np.cos(xs * 6 * np.pi)
+    def __init__(self, quadcopter):
+        # Model shape of quadcopter
+        l = quadcopter.l # Arm length
+        self.model = [[0, l, 0, 0, 0, -l, 0, 0, 0],
+                      [0, 0, 0, l, 0, 0, 0, -l, 0],
+                      [0, 0, 0, 0, 0, 0, 0, 0, 0]]
+        
+        plt.style.use('_mpl-gallery')
 
-    # Plot
-    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    ax.plot(xs, ys, zs)
+        # Plot
+        self.fig, self.ax = plt.subplots(subplot_kw={"projection": "3d"})
+        self.fig.set_dpi(400) # Controls output resolution
 
-    ax.set(xticklabels=[],
-        yticklabels=[],
-        zticklabels=[])
+    def render(self, position, rotation):
+        # Clear plot and reset axes properties
+        self.ax.clear()
+        self.ax.set(xlim3d=(-1, 1), xlabel='x')
+        self.ax.set(ylim3d=(-1, 1), ylabel='y')
+        self.ax.set(zlim3d=(-1, 1), zlabel='z')
 
-    # Render the figure into an in-memory PNG.
-    buffer = io.BytesIO()
-    fig.savefig(
-        buffer,
-        format="png",
-        dpi=fig.dpi,
-        bbox_inches=None,
-        pad_inches=0,
-    )
+        # Translate quadcopter model with position
+        self.ax.plot(np.add(self.model[0], position[0]),
+                     np.add(self.model[1], position[1]),
+                     np.add(self.model[2], position[2]))
 
-    buffer.seek(0)
+        # Render the figure into an in-memory PNG.
+        buffer = io.BytesIO()
+        self.fig.savefig(
+            buffer,
+            format="png",
+            dpi=self.fig.dpi,
+            bbox_inches=None,
+            pad_inches=0,
+        )
 
-    image = Image.open(buffer).convert("RGB")
-    frame = np.asarray(image, dtype=np.uint8).copy()
+        buffer.seek(0)
 
-    buffer.close()
+        image = Image.open(buffer).convert("RGB")
+        frame = np.asarray(image, dtype=np.uint8).copy()
 
-    return frame
+        buffer.close()
+
+        return frame

@@ -4,7 +4,7 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 from quadcopters import Quadcopter
-import rendering
+from rendering import QuadcopterRenderer
 
 class MyCustomEnv(gym.Env):
     metadata = {"render_modes": ["rgb_array"], "render_fps": 100}
@@ -12,10 +12,6 @@ class MyCustomEnv(gym.Env):
     def __init__(self, render_mode=None):
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
-
-        self.canvas_height = 800
-        self.canvas_width = 800
-        self.pixels_per_meter = 800  # Adjust based on your coordinate system
 
         self.action_space = spaces.Box(
             low=0.0,
@@ -36,6 +32,7 @@ class MyCustomEnv(gym.Env):
         self.current_step = 0
 
         self.quad = Quadcopter(0.8, 0.5, 1e-3)
+        self.qr = QuadcopterRenderer(self.quad)
         
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
@@ -75,16 +72,11 @@ class MyCustomEnv(gym.Env):
         if self.render_mode != "rgb_array":
             return None
         
-        # Create a blank canvas
-        canvas = np.zeros((self.canvas_height, self.canvas_width, 3), dtype=np.uint8)
-        
         # Get position and rotation from quad state
-        position = self.quad.state[:2]  # (x, y)
-        rotation = self.quad.state[2]   # angle in radians
+        position = np.append(0, self.quad.state[:2]) # (x, y, z)
+        rotation = np.append(self.quad.state[2], [0, 0]) # (phi_x, phi_y, phi_z)
 
-        canvas = rendering.render()
-        
-        return canvas
+        return self.qr.render(position, rotation)
 
 gym.register(
     id="MyCustomEnv-v0",
