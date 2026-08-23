@@ -3,6 +3,7 @@ name = "quadcopter-training"
 version = "0.1"
 dependencies = [
     "numpy",
+    "matplotlib",
     "gymnasium==0.29.1",
     "torch",
     "tyro",

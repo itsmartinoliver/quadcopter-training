@@ -2,6 +2,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 # https://mrandri19.github.io/2026/04/03/2d-quadcopter-simulation.html
+# TODO: [3D simulation](https://mrandri19.github.io/2026/04/11/3d-quadcopter-simulation.html)
 class Quadcopter:
     def __init__(self, m, l, I):
         self.g, self.m, self.l, self.I = 9.81, m, l, I
