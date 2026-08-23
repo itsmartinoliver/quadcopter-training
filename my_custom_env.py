@@ -13,6 +13,7 @@ class MyCustomEnv(gym.Env):
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
 
+        self.last_action = None
         self.action_space = spaces.Box(
             low=0.0,
             high=20.0,
@@ -30,6 +31,7 @@ class MyCustomEnv(gym.Env):
         self.render_mode = render_mode
         self.max_steps = 200
         self.current_step = 0
+        self.current_episode = -1
 
         self.quad = Quadcopter(0.8, 0.5, 1e-3)
         self.qr = QuadcopterRenderer(self.quad)
@@ -37,6 +39,7 @@ class MyCustomEnv(gym.Env):
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
         self.current_step = 0
+        self.current_episode += 1
         # Randomize state upon reset
         self.quad.state = np.array([
             self.np_random.uniform(-0.01, 0.01), # y
@@ -53,13 +56,12 @@ class MyCustomEnv(gym.Env):
         
         # Simulate environment dynamics
         self.quad.step(0.01, action)
+        self.last_action = action
         
         self.current_step += 1
         
         # Calculate reward
-        reward = float(-np.sum(
-                (self.quad.state[3:5] ** 2) + (self.quad.state[0:2] ** 2)
-            ))
+        reward = float(-np.sum(self.quad.state[0:2] ** 2))
         
         # Episode ends after max_steps or if state is large
         terminated = bool(np.sum(np.square(self.quad.state[:2])) > 1.0)
@@ -72,11 +74,13 @@ class MyCustomEnv(gym.Env):
         if self.render_mode != "rgb_array":
             return None
         
-        # Get position and rotation from quad state
-        position = np.append(0, self.quad.state[:2]) # (x, y, z)
-        rotation = np.append(self.quad.state[2], [0, 0]) # (phi_x, phi_y, phi_z)
-
-        return self.qr.render(position, rotation)
+        return self.qr.render(title=f"Episode {self.current_episode} step {self.current_step}/{self.max_steps}",
+                              label=f"action: {self.last_action}\n"+
+                                    f"position: ({str(self.quad.state[0])[:6]}, {str(self.quad.state[1])[:6]})\n"+
+                                    f"rotation: {str(self.quad.state[2])[:6]} rads\n"+
+                                    f"velocity: ({str(self.quad.state[3])[:6]}, {str(self.quad.state[4])[:6]})\n"+
+                                    f"angular velocity: {str(self.quad.state[5])[:6]}"
+                            )
 
 gym.register(
     id="MyCustomEnv-v0",
