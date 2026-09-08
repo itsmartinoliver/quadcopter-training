@@ -2,6 +2,7 @@ import io
 from PIL import Image
 import matplotlib.pyplot as plt
 import numpy as np
+from quat_utils import *
 
 class QuadcopterRenderer():
 
@@ -23,23 +24,26 @@ class QuadcopterRenderer():
         self.ax.set(ylim3d=(-1, 1), ylabel='y')
         self.ax.set(zlim3d=(-1, 1), zlabel='z')
 
-        # Model shape of quadcopter with rotation
-        l = self.quadcopter.l # Arm length
-        s = l * np.sin(self.quadcopter.state[2])
-        c = l * np.cos(self.quadcopter.state[2])
-        self.model = [[0, l, 0, 0, 0, -l, 0, 0, 0],
-                      [0, 0, 0, c, 0, 0, 0, -c, 0],
-                      [0, 0, 0, s, 0, 0, 0, -s, 0]]
+        # Model rotated shape of quadcopter
+        L = self.quadcopter.L # Arm length
+        v1 = rot_vec_by_quat(self.quadcopter.state[3:7], [L, 0, 0])
+        v2 = rot_vec_by_quat(self.quadcopter.state[3:7], [0, L, 0])
+        v3 = rot_vec_by_quat(self.quadcopter.state[3:7], [-L, 0, 0])
+        v4 = rot_vec_by_quat(self.quadcopter.state[3:7], [0, -L, 0])
+        self.model = [[0, v1[0], 0, v2[0], 0, v3[0], 0, v4[0], 0],
+                      [0, v1[1], 0, v2[1], 0, v3[1], 0, v4[1], 0],
+                      [0, v1[2], 0, v2[2], 0, v3[2], 0, v4[2], 0]]
 
         # Translate quadcopter model with position
-        self.ax.plot(np.add(self.model[0], 0),
-                     np.add(self.model[1], self.quadcopter.state[0]),
-                     np.add(self.model[2], self.quadcopter.state[1]))
+        self.ax.plot(np.add(self.model[0], self.quadcopter.state[0]),
+                     np.add(self.model[1], self.quadcopter.state[1]),
+                     np.add(self.model[2], self.quadcopter.state[2]))
 
         # Annotate figure with stationary and label text
-        axto = (0.1, 0.1, 0) # ax text offset. Merely for display purposes
+        axto = (0, 0, 0) # ax text offset. Merely for display purposes
         plt.title(title, loc="left")
-        self.ax.text(axto[0], self.quadcopter.state[0] + axto[1], self.quadcopter.state[1] + axto[2], label,
+        self.ax.text(self.quadcopter.state[0] + axto[0], self.quadcopter.state[1] + axto[1], self.quadcopter.state[2] + axto[2],
+                label,
                 ha="left",
                 va="center",
                 bbox=dict(boxstyle="square",

@@ -5,6 +5,8 @@ from gymnasium import spaces
 import numpy as np
 from quadcopters import Quadcopter
 from rendering import QuadcopterRenderer
+from text_utils import *
+from quat_utils import *
 
 class MyCustomEnv(gym.Env):
     metadata = {"render_modes": ["rgb_array"], "render_fps": 100}
@@ -15,16 +17,16 @@ class MyCustomEnv(gym.Env):
 
         self.last_action = None
         self.action_space = spaces.Box(
-            low=0.0,
-            high=20.0,
-            shape=(2,),
+            low=np.array([0.0, -0.1, -0.1, -0.1], dtype=np.float32), # Different lower and upper bounds for each component
+            high=np.array([9.81+5.0, 0.1, 0.1, 0.1], dtype=np.float32),
+            shape=(4,),
             dtype=np.float32
         )
         
         self.observation_space = spaces.Box(
             low=-np.inf,
             high=np.inf,
-            shape=(6,),
+            shape=(13,),
             dtype=np.float32
         )
         
@@ -33,21 +35,29 @@ class MyCustomEnv(gym.Env):
         self.current_step = 0
         self.current_episode = -1
 
-        self.quad = Quadcopter(0.8, 0.5, 1e-3)
+        self.quad = Quadcopter()
         self.qr = QuadcopterRenderer(self.quad)
         
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
+        self.last_action = None
         self.current_step = 0
         self.current_episode += 1
         # Randomize state upon reset
         self.quad.state = np.array([
-            self.np_random.uniform(-0.01, 0.01), # y
-            self.np_random.uniform(-0.01, 0.01), # z
-            self.np_random.uniform(-0.01, 0.01), # phi
-            self.np_random.uniform(-0.01, 0.01), # y_dot
-            self.np_random.uniform(-0.01, 0.01), # z_dot
-            self.np_random.uniform(-0.01, 0.01) # phi_dot
+            0, # x
+            0, # y
+            0, # z
+            1, # q_a
+            0, # q_b
+            0, # q_c
+            0, # q_d
+            0, # v_x
+            0, # v_y
+            0, # v_z
+            0, # w_x
+            0, # w_y
+            0, # w_z
         ], dtype=np.float32)
         return self.quad.state, {}
     
@@ -61,10 +71,10 @@ class MyCustomEnv(gym.Env):
         self.current_step += 1
         
         # Calculate reward
-        reward = float(-np.sum(self.quad.state[0:2] ** 2))
+        reward = float(-np.sum(self.quad.state[0:3] ** 2))
         
         # Episode ends after max_steps or if state is large
-        terminated = bool(np.sum(np.square(self.quad.state[:2])) > 1.0)
+        terminated = bool(np.sum(np.square(self.quad.state[:3])) > 1.0)
         truncated = self.current_step >= self.max_steps
 
         return self.quad.state, reward, terminated, truncated, {}
@@ -75,11 +85,11 @@ class MyCustomEnv(gym.Env):
             return None
         
         return self.qr.render(title=f"Episode {self.current_episode} step {self.current_step}/{self.max_steps}",
-                              label=f"action: {self.last_action}\n"+
-                                    f"position: ({str(self.quad.state[0])[:6]}, {str(self.quad.state[1])[:6]})\n"+
-                                    f"rotation: {str(self.quad.state[2])[:6]} rads\n"+
-                                    f"velocity: ({str(self.quad.state[3])[:6]}, {str(self.quad.state[4])[:6]})\n"+
-                                    f"angular velocity: {str(self.quad.state[5])[:6]}"
+                              label=f"action: {vscw(self.last_action)}\n"+
+                                    f"position: {vscw(self.quad.state[0:3])}\n"+
+                                    f"euler: {vscw(quaternion_to_euler(self.quad.state[3:7]))}\n"+
+                                    f"velocity: {vscw(self.quad.state[7:10])}\n"+
+                                    f"ang vel: {vscw(self.quad.state[10:13])}"
                             )
 
 gym.register(
