@@ -4,6 +4,9 @@ COPY pyproject.toml .
 COPY ppo_continuous_action.py .
 COPY my_custom_env.py .
 COPY quadcopters.py .
+COPY rendering.py .
+COPY quat_utils.py .
+COPY text_utils.py .
 COPY cleanrl_utils ./cleanrl_utils
 
 RUN pip install .
